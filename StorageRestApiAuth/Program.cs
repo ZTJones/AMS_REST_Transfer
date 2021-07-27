@@ -16,12 +16,12 @@
         // static string StorageAccountName = "YOURSTORAGEACCOUNTNAME";
         static string StorageAccountName = "zjonestemp";
         // static string StorageAccountKey = "YOURSTORAGEACCOUNTKEY";
-        static string StorageAccountKey = "gPH8MWPzS5ZfCfJDLVnn1iCOdvnUYhDkewhng67LuFog3YV0aaLkDYU4L06bSZB9/vWmRC7w4mYK/woWlbPA4A==";
+        static string StorageAccountKey = "9Fk+ksOlghxA19XQ3MkTCtL9PVD7qYgQqq+y0i3gae/4gdVXz9O6lsF3SJh1/QqAs7LG52YVrO8gxz9Kc2dKcQ==";
         static string VersionCurrent = "2020-04-08";
 
         // Alternate info below
         static string AltAccountName = "testingstoragex";
-        static string AltAccountKey = "sz9Q6XjOq75aXL7f9x4lLlK5xsETR0l4Afxna54xEmS8rNc1TR2uBu+AULdE9GOWdAesQH1DrLyF9/0m0lCkxg==";
+        static string AltAccountKey = "jOUV4uRMpX4Qf46v+UlA5lUpbMk1zSyTR4QSzk+BHY3NyPN7Tz5onR6zuYGLRKbXgxCJ0sElkMYGh/GQihhfOw==";
 
         private static void Main()
         {
@@ -48,6 +48,7 @@
             Console.WriteLine("2: Export to another account");
             Console.WriteLine("3: Close program");
             Console.WriteLine("4: Create Container (test)");
+            Console.WriteLine("5: Fun with authorization headers");
 
             string input = Console.ReadLine();
 
@@ -67,9 +68,17 @@
                 case "4": Console.WriteLine("Creating new container (test)");
                     CreateContainer(StorageAccountName, StorageAccountKey, CancellationToken.None).GetAwaiter().GetResult();
                     break;
+                case "5": Console.WriteLine("YOU CHOSE FUN WITH AUTHHEADERS!");
+                    //FunWithHeaders();
+                    break;
                 default: Console.WriteLine("It looks like you've chosen an invalid input that isn't 0.");
                     break;
             }
+        }
+
+        private static void FunWithHeaders()
+        {
+
         }
 
         private static void TransferManager()
@@ -82,14 +91,15 @@
             //Console.WriteLine(containers);
             foreach(string name in containers)
             {
-                Console.WriteLine(name); // Quick sanity check, we've got all the container names now.
+                //Console.WriteLine(name); // Quick sanity check, we've got all the container names now.
                 // Create new container
                 // await CreateContainer(AltAccountName, AltAccountKey, CancellationToken.None, name);
                 // Get all blob names in container
                 List<string> allBlobs = ListBlobs(StorageAccountName, StorageAccountKey, name, CancellationToken.None).GetAwaiter().GetResult();
                 foreach(string blobName in allBlobs)
                 {
-                    string sourceURL = string.Format("http://{0}.blob.core.windows.net/{1}/{2}", AltAccountName, name, blobName);
+                    // string sourceURL = string.Format("https://{0}.blob.core.windows.net/{1}/{2}/{3}", StorageAccountName, name, blobName, "?sv=2020-08-04&ss=bfqt&srt=sco&sp=rwdlacuptfx&se=2021-07-23T08:04:35Z&st=2021-07-23T00:04:35Z&spr=https,http&sig=YQl9fdNGW%2FtZJqVqmfKJdoCK25%2BEw69%2FD8ycjltQDFk%3D");
+                    string sourceURL = string.Format("https://{0}.blob.core.windows.net/{1}/{2}{3}", StorageAccountName, name, blobName, "?sv=2020-08-04&ss=bfqt&srt=sco&sp=rwdlacuptfx&se=2021-07-23T08:04:35Z&st=2021-07-23T00:04:35Z&spr=https,http&sig=YQl9fdNGW%2FtZJqVqmfKJdoCK25%2BEw69%2FD8ycjltQDFk%3D");
                     CreateContainer(AltAccountName, AltAccountKey, CancellationToken.None, name);
                     CopyBlob(AltAccountName, AltAccountKey, name, blobName, sourceURL, CancellationToken.None);
                 }
@@ -114,7 +124,7 @@
 
 
             // Construct the URI. PUT, /containername/myblob
-            String uri = string.Format("http://{0}.blob.core.windows.net/{1}/{2}", storageAccountName, containerName, blobName);
+            String uri = string.Format("https://{0}.blob.core.windows.net/{1}/{2}", storageAccountName, containerName, blobName);
 
             // Set this to whatever payload you desire. Ours is null because 
             //   we're not passing anything in.
@@ -152,6 +162,8 @@
                     else
                     {
                         Console.WriteLine("That didn't work.");
+                        Console.WriteLine(httpRequestMessage);
+                        Console.WriteLine(httpResponseMessage);
                     }
                 }
             }
@@ -161,13 +173,13 @@
         {
             // Construct the URI. This will look like this:
             //   https://myaccount.blob.core.windows.net/resource
-            String uri = string.Format("http://{0}.blob.core.windows.net/"+ containerName +"?restype=container&comp=list", storageAccountName);
+            String uri = string.Format("https://{0}.blob.core.windows.net/"+ containerName +"?restype=container&comp=list", storageAccountName);
 
             // Set this to whatever payload you desire. Ours is null because 
             //   we're not passing anything in.
             Byte[] requestPayload = null;
 
-            //Instantiate the request message with a null payload.
+            // Instantiate the request message with a null payload.
             using (var httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, uri)
             { Content = (requestPayload == null) ? null : new ByteArrayContent(requestPayload) })
             {
@@ -195,7 +207,7 @@
                         XElement x = XElement.Parse(xmlString);
                         foreach (XElement container in x.Element("Blobs").Elements("Blob"))
                         {
-                            Console.WriteLine("Blob name = {0}", container.Element("Name").Value);
+                            //Console.WriteLine("Blob name = {0}", container.Element("Name").Value);
                             try
                             {
 
@@ -213,7 +225,7 @@
                     }
                     else
                     {
-                        Console.WriteLine("That didn't work.");
+                        Console.WriteLine("That didn't work, List Blobs");
                     }
                     return allBlobs;
                 }
@@ -231,7 +243,7 @@
 
             // Construct the URI. This will look like this:
             //   https://myaccount.blob.core.windows.net/resource
-            String uri = string.Format("http://{0}.blob.core.windows.net?comp=list", storageAccountName);
+            String uri = string.Format("https://{0}.blob.core.windows.net?comp=list", storageAccountName);
 
             // Set this to whatever payload you desire. Ours is null because 
             //   we're not passing anything in.
@@ -276,11 +288,11 @@
             // Taking the guts from the already made functions and modifying from there
             // Construct the URI. This will look like this:
             //   https://myaccount.blob.core.windows.net/resource
-            //String uri = string.Format("http://{0}.blob.core.windows.net?comp=list", storageAccountName);
-            String uri = string.Format("http://{0}.blob.core.windows.net/" + name + "?restype=container", storageAccountName);
+            //String uri = string.Format("https://{0}.blob.core.windows.net?comp=list", storageAccountName);
+            String uri = string.Format("https://{0}.blob.core.windows.net/" + name + "?restype=container", storageAccountName);
             // string uri_plus = uri + SAS_Token;
             string uri_plus = uri; //For testing purposes
-            Console.WriteLine(uri_plus);
+            //Console.WriteLine(uri_plus);
 
             // Set this to whatever payload you desire. Ours is null because 
             //   we're not passing anything in.
@@ -316,7 +328,8 @@
                     }
                     else
                     {
-                        Console.WriteLine("Well, that didn't work");
+                        //Console.WriteLine("Well, that didn't work");
+                        //Console.WriteLine(httpResponseMessage);
                     }
                 }
             }
@@ -328,7 +341,7 @@
 
             // Construct the URI. This will look like this:
             //   https://myaccount.blob.core.windows.net/resource
-            String uri = string.Format("http://{0}.blob.core.windows.net?comp=list", storageAccountName);
+            String uri = string.Format("https://{0}.blob.core.windows.net?comp=list", storageAccountName);
 
             // Set this to whatever payload you desire. Ours is null because 
             //   we're not passing anything in.
